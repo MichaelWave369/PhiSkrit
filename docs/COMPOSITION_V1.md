@@ -42,7 +42,7 @@ This is a deliberately invented sonification, **not** a Sanskrit musical transcr
 
 The current More Bounce Labs Agent Mix Studio expects \`mbl-mix-v1\`: a listening set referencing **real album IDs and track indexes** from its catalog. PhiSkrit composition JSON has none of those identities, so **do not** import it as an MBL mix or fabricate catalog entries.
 
-A future consent-based MBL receiver could parse and preview this standalone composition format in a separate lane, without modifying MBL's mix importer or playback authorization. Nothing in v0.5 claims that receiver exists yet. MIDI export is compatible with general MIDI-capable music tools.
+**Available as of the PhiSkrit v0.5.1 handoff:** More Bounce Labs now has a separate **Desk → PhiSkrit Review** workspace. It independently validates `phiskrit.rhythm.composition.v1` and displays the arrangement as a read-only timeline. Export the JSON locally, open MBL Desk, select **PhiSkrit Review**, and import the file manually. This operation does not start audio, queue tracks, or modify the MBL Agent Mix Studio. MIDI export remains usable in regular MIDI-compatible music tools.
 
 ## Testing
 

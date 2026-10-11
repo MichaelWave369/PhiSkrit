@@ -2,6 +2,17 @@
 
 **Three runnable educational experiments inspired by classical Indian intellectual traditions.**
 
+## v0.5.1: Two-way PhiSkrit / More Bounce Labs handoff
+
+The PhiSkrit Composer now links directly to the **live More Bounce Labs Desk**, whose **PhiSkrit Review** workspace can inspect `phiskrit.rhythm.composition.v1` JSON safely.
+
+1. Compose and export **Composition JSON** in PhiSkrit.
+2. Click **Open More Bounce Labs review workspace**.
+3. Choose **PhiSkrit Review** within the MBL Desk and select your downloaded file.
+4. Inspect MBL's independently reconstructed timeline. No autoplay, queue mutation, or new permissions.
+
+This human-mediated file transfer does **not** change MBL's `mbl-mix-v1` contract. MBL Agent Mix Studio still requires real catalog identities, and does not accept raw music-note data.
+
 ## v0.5.0: Multi-clip rhythm composer
 
 A fifth tab, **Composer**, now builds small original rhythmic sequences from the existing laghu/guru patterns:
