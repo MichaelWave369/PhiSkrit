@@ -2,6 +2,14 @@
 
 **Three runnable educational experiments inspired by classical Indian intellectual traditions.**
 
+## v0.2.0: play, inspect, export
+
+- **Rule debugger:** inspect the result of each demonstration rule evaluation with reset, previous, next, run-all, and direct step selection. The model is computed deterministically; UI inspection does not mutate the engine.
+- **Rhythm sequencer:** click to synthesize the selected L/G metrical sequence in-browser using Web Audio, with 60–180 BPM tempo control, 1-beat laghu / 2-beat guru timing, and no recorded audio dependencies.
+- **Experiment receipts:** export a machine-readable JSON document from each engine containing versioned schema, inputs, outputs, trace, provenance limitations and a local SHA-256 integrity checksum. The checksum detects alteration, **not** the truth of a historical claim or authorship.
+
+All calculations and receipt schemas are independent of React and do not require a backend.
+
 - **Pāṇini engine:** a deliberately small rule-priority and transformation-trace demo for three common Sanskrit vowel-combination cases. It is not a full Aṣṭādhyāyī implementation, a Sanskrit parser, or an authoritative linguistic reconstruction.
 - **Piṅgala engine:** complete laghu/guru pattern enumeration for 1–8 syllabic positions, indexed exploration, and simple duration totals. Display mapping L=0 / G=1 is a modern UI convention, not a claim about the exact historical algorithm.
 - **Āryabhaṭa engine:** repeatable approximation (104 × 8 + 62,000) / 20,000 = 3.1416, circle calculations, and an explicitly simplified rotation model.
@@ -53,7 +61,7 @@ The architecture keeps pure logic in src/engines/ so later experimental integrat
 1. Verify a green React Pages deployment and mobile UI.
 2. Expand grammar experiments only alongside source citations and regression cases.
 3. Add historically faithful, independently validated Piṅgala enumeration as a distinct mode.
-4. Provide a downloadable, versioned experiment/trace receipt format.
+4. Add receipt re-import and independent checks of semantic claims (v0.2 currently offers export and integrity verification API).
 5. Explore cross-engine rule/pattern analogies without equating them to historical fact.
 
 Copyright 2026 MichaelWave369. MIT license.

@@ -1,4 +1,7 @@
 import React, { useMemo, useState } from 'react';
+import { useRhythmPlayback } from './hooks/useRhythmPlayback.js';
+import { buildRhythmEvents } from './engines/rhythm.js';
+import { createExperimentReceipt } from './engines/receipts.js';
 import { applyDemoSandhi, DEMO_RULES } from './engines/grammar.js';
 import { enumerateMeters, meterAt, meterCount, meterDuration } from './engines/prosody.js';
 import { ARYABHATA_PI, piErrorPercent, circumference, earthRotationDegrees } from './engines/astronomy.js';
@@ -23,9 +26,74 @@ function SectionHeading({ eyebrow, title, copy }) {
   </div>;
 }
 
+function ReceiptButton({ engine, inputs, outputs, trace }) {
+  const [status, setStatus] = useState('');
+  const [busy, setBusy] = useState(false);
+  async function exportReceipt() {
+    setBusy(true);
+    setStatus('');
+    let url = null;
+    try {
+      const receipt = await createExperimentReceipt({ engine, inputs, outputs, trace });
+      const blob = new Blob([JSON.stringify(receipt, null, 2) + '\n'], { type: 'application/json' });
+      url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'phiskrit-' + engine + '-receipt.json';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setStatus('Receipt generated locally · SHA-256 attached');
+    } catch (error) {
+      setStatus('Export unavailable: ' + (error?.message || 'Unknown error'));
+    } finally {
+      if (url) window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setBusy(false);
+    }
+  }
+  return <div className="receipt-row">
+    <button type="button" className="action-button" onClick={exportReceipt} disabled={busy}>{busy ? 'Generating…' : '↓ Export experiment receipt'}</button>
+    <span role="status">{status || 'Offline JSON · reproducible inputs and outputs'}</span>
+  </div>;
+}
+
+function RuleDebugger({ result, step, setStep }) {
+  const bounded = Math.min(step, result.trace.length - 1);
+  const active = result.trace[bounded];
+  return <div className="panel debugger-panel">
+    <div className="panel-top"><span>RULE EXECUTION DEBUGGER</span><span>STEP {bounded + 1} / {result.trace.length}</span></div>
+    <div className="debugger-controls">
+      <button type="button" disabled={bounded === 0} onClick={() => setStep(0)}>↶ Reset</button>
+      <button type="button" disabled={bounded === 0} onClick={() => setStep(n => Math.max(n - 1, 0))}>← Previous</button>
+      <button type="button" disabled={bounded >= result.trace.length - 1} onClick={() => setStep(n => Math.min(n + 1, result.trace.length - 1))}>Next →</button>
+      <button type="button" disabled={bounded === result.trace.length - 1} onClick={() => setStep(result.trace.length - 1)}>Run all ↗</button>
+    </div>
+    <div className="execution-path" aria-label="Rule execution steps">
+      {result.trace.map((entry, index) => <button type="button" key={entry.id}
+        className={'execution-node ' + (index === bounded ? 'selected' : '') + (index < bounded ? ' visited' : '')}
+        onClick={() => setStep(index)} aria-pressed={index === bounded}>
+        <span>{String(index + 1).padStart(2, '0')}</span>
+        <strong>{entry.id}</strong>
+        <small>{index > bounded ? 'UPCOMING' : entry.status.toUpperCase()}</small>
+      </button>)}
+    </div>
+    <div className="debugger-inspector" role="status" aria-live="polite">
+      <span className="eyebrow">INSPECTED STEP · {active.id}</span>
+      <strong>{active.description}</strong>
+      <p>{active.status === 'match' ? 'Rule condition matched this word boundary.' :
+        active.status === 'skip' ? 'This condition did not match the word boundary.' :
+        active.status === 'blocked' ? 'An input is missing. Nothing can be transformed.' :
+        active.status === 'transformed' ? 'The selected demonstration rule produced the resulting form.' :
+        'The original engine calculated the result. This view replays its trace; it does not alter the rule order.'}</p>
+    </div>
+    <p className="muted">Interactive inspection of a deterministically computed trace, not a historical reconstruction of Pāṇini’s complete rule-ordering system.</p>
+  </div>;
+}
+
 function GrammarLab() {
   const [left, setLeft] = useState('deva');
   const [right, setRight] = useState('indra');
+  const [step, setStep] = useState(3);
   const result = useMemo(() => applyDemoSandhi(left, right), [left, right]);
   const examples = [['deva', 'indra'], ['rāma', 'avatāra'], ['loka', 'upakāra']];
   return <div className="lab-layout">
@@ -34,12 +102,12 @@ function GrammarLab() {
       <div className="panel">
         <div className="panel-top"><span>INPUT STREAM</span><span>ROMANIZED TEXT / NFC</span></div>
         <div className="word-fields">
-          <label>Left word<input value={left} maxLength={50} onChange={e => setLeft(e.target.value)} placeholder="deva" /></label>
+          <label>Left word<input value={left} maxLength={50} onChange={e => { setLeft(e.target.value); setStep(0); }} placeholder="deva" /></label>
           <div className="join-mark">+</div>
-          <label>Right word<input value={right} maxLength={50} onChange={e => setRight(e.target.value)} placeholder="indra" /></label>
+          <label>Right word<input value={right} maxLength={50} onChange={e => { setRight(e.target.value); setStep(0); }} placeholder="indra" /></label>
         </div>
         <div className="presets"><span>TRY A PAIR</span>{examples.map(([a,b]) =>
-          <button key={a} onClick={() => { setLeft(a); setRight(b); }}>{a} + {b}</button>
+          <button key={a} onClick={() => { setLeft(a); setRight(b); setStep(0); }}>{a} + {b}</button>
         )}</div>
       </div>
       <div className="result-panel">
@@ -47,14 +115,8 @@ function GrammarLab() {
         <div className="result-word">{result.output || 'Enter two words'}</div>
         <p>{result.appliedRule ? 'A demonstration vowel rule was applied.' : 'No applicable demonstration rule was applied.'}</p>
       </div>
-      <div className="panel">
-        <div className="panel-top"><span>EXECUTION TRACE</span><span>{result.trace.length} ENTRIES</span></div>
-        <div className="trace">{result.trace.map((item, index) => <div key={item.id} className="trace-row">
-          <span className="mono trace-number">{String(index + 1).padStart(2,'0')}</span>
-          <span className="trace-name">{item.description}</span>
-          <span className={'trace-status ' + item.status}>{item.status}</span>
-        </div>)}</div>
-      </div>
+      <RuleDebugger result={result} step={step} setStep={setStep} />
+      <ReceiptButton engine="grammar" inputs={{ left, right }} outputs={{ output: result.output, appliedRule: result.appliedRule }} trace={result.trace} />
     </div>
     <aside className="lab-aside">
       <div className="aside-card"><div className="eyebrow">THE RULESET</div>
@@ -73,6 +135,9 @@ function ProsodyLab() {
   const all = useMemo(() => enumerateMeters(length), [length]);
   const safeIndex = Math.min(index, meterCount(length) - 1);
   const pattern = meterAt(length, safeIndex);
+  const [bpm, setBpm] = useState(96);
+  const playback = useRhythmPlayback(pattern, bpm);
+  const events = useMemo(() => buildRhythmEvents(pattern, bpm), [pattern, bpm]);
   return <div className="lab-layout">
     <div className="lab-main">
       <SectionHeading eyebrow="ENGINE 02 / COMBINATORICS" title="The pattern engine" copy="Laghu and guru: two kinds of syllable, many possible rhythms. Generate a complete space of metrical patterns and inspect any one of them." />
@@ -85,6 +150,20 @@ function ProsodyLab() {
         <div className="rhythm">{[...pattern].map((letter, i) => <div key={i} className={'syllable ' + (letter === 'G' ? 'long' : 'short')}><span>{letter}</span><small>{letter === 'G' ? 'GURU · 2' : 'LAGHU · 1'}</small></div>)}</div>
         <div className="metrics"><div><span>SELECTED PATTERN</span><strong>{pattern}</strong></div><div><span>TOTAL MĀTRĀS</span><strong>{meterDuration(pattern)}</strong></div><div><span>FORMULA</span><strong>2<sup>{length}</sup> = {meterCount(length)}</strong></div></div>
       </div>
+      <div className="panel sound-panel">
+        <div className="panel-top"><span>LIVE RHYTHM SEQUENCER</span><span>WEB AUDIO · NO SAMPLES / NO UPLOAD</span></div>
+        <div className="control-head"><label htmlFor="rhythm-tempo">Tempo (quarter-note BPM)</label><strong>{bpm} BPM</strong></div>
+        <input className="range" id="rhythm-tempo" type="range" min="60" max="180" step="2" value={bpm} onChange={e => setBpm(Number(e.target.value))} />
+        <div className="rhythm-playback">
+          <button type="button" className="action-button" aria-label={playback.playing ? 'Stop metrical rhythm' : 'Play metrical rhythm'} onClick={playback.playing ? playback.stop : playback.play}>
+            {playback.playing ? '■ Stop playback' : '▶ Play this pattern'}
+          </button>
+          <span role="status">{playback.error || (playback.playing ? 'Playing the selected pattern' : 'Synthesized locally · light = 1 beat · heavy = 2 beats')}</span>
+        </div>
+        <div className="beat-track">{events.map(event => <div key={event.index} className={'beat-segment ' + (event.syllable === 'G' ? 'heavy' : 'light')} style={{ flexGrow: event.beats }}><span>{event.syllable}</span><small>{event.beats} {event.beats === 1 ? 'BEAT' : 'BEATS'}</small></div>)}</div>
+        <p className="muted">Modern sonification: the 0/1 meter patterns determine timing, not a claim about instruments or music in Piṅgala's original treatise.</p>
+      </div>
+      <ReceiptButton engine="prosody" inputs={{ length, index: safeIndex, bpm, mapping: 'L=1 beat, G=2 beats' }} outputs={{ pattern, matras: meterDuration(pattern), events }} trace={events} />
       <div className="panel">
         <div className="panel-top"><span>PATTERN ATLAS</span><span>{all.length} TOTAL / {Math.min(all.length, 32)} SHOWN</span></div>
         <div className="pattern-grid">{all.slice(0, 32).map(({ index: n, pattern: p }) =>
@@ -130,6 +209,7 @@ function AstronomyLab() {
         <input className="range" id="hours" type="range" min="0" max="24" step="1" value={hours} onChange={e => setHours(Number(e.target.value))} />
         <p className="muted">A simple 15°/hour visual using a 24-hour day. This is not a precision sidereal or geocentric astronomy model.</p>
       </div>
+      <ReceiptButton engine="astronomy" inputs={{ diameter, hours, model: '24-hour illustrative rotation' }} outputs={{ piApproximation: ARYABHATA_PI, piRelativeErrorPercent: piErrorPercent(), circumferenceApproximation: circumference(diameter), circumferenceModern: circumference(diameter, Math.PI), degrees }} trace={[{ formula: '(104×8+62000)/20000', result: ARYABHATA_PI }, { formula: '15 degrees per hour', degrees }]} />
     </div>
     <aside className="lab-aside">
       <div className="aside-card"><div className="eyebrow">THE PROVENANCE</div><h3>Exact math, cautious history.</h3><p>Āryabhaṭa's approximation is described as an approximate circumference of 62,832 for a diameter of 20,000. The resulting ratio is 3.1416.</p><div className="rule-card"><span>EXPERIMENT</span><strong>π ≈ C / D</strong></div></div>
@@ -142,7 +222,7 @@ export default function App() {
   const [active, setActive] = useState('grammar');
   const current = SECTIONS.find(x => x.id === active);
   return <div className="app">
-    <header className="site-header"><a href="#top" className="logo"><span className="logo-symbol">Φ</span><span>Phi<span className="logo-accent">Skrit</span><small>THE SANSKRIT MACHINE</small></span></a><nav aria-label="Main navigation"><a href="#engines">Engines</a><a href="#evidence">Evidence</a><a href="https://github.com/MichaelWave369/PhiSkrit" target="_blank" rel="noopener noreferrer">GitHub ↗</a></nav><span className="version">V 0.1.0 · PUBLIC LAB</span></header>
+    <header className="site-header"><a href="#top" className="logo"><span className="logo-symbol">Φ</span><span>Phi<span className="logo-accent">Skrit</span><small>THE SANSKRIT MACHINE</small></span></a><nav aria-label="Main navigation"><a href="#engines">Engines</a><a href="#evidence">Evidence</a><a href="https://github.com/MichaelWave369/PhiSkrit" target="_blank" rel="noopener noreferrer">GitHub ↗</a></nav><span className="version">V 0.2.0 · INTERACTIVE LAB</span></header>
     <main id="top">
       <section className="hero">
         <div className="hero-content"><div className="eyebrow"><span className="status-dot"></span> AN OPEN LABORATORY FOR ANCIENT IDEAS</div><h1>Language is <em>logic.</em><br />Rhythm is <em>number.</em><br />The sky is <em>mathematics.</em></h1><p>Three remarkable intellectual traditions. Three runnable experiments. One place to ask how patterns become systems.</p><a className="primary-link" href="#engines">Explore the machines <span>↗</span></a></div>
@@ -156,7 +236,7 @@ export default function App() {
       </section>
       <section id="evidence" className="evidence-section"><div className="section-kicker"><span>EVIDENCE LEDGER</span><span>SOURCES · SCOPE · LIMITS</span></div><div className="evidence-intro"><div><div className="eyebrow">RESEARCH BEFORE MYTHOLOGY</div><h2>Every claim needs a source.<br /><em>Every model needs a boundary.</em></h2></div><p>PhiSkrit is an original educational implementation, not a Sanskrit translator, a full historical reconstruction, or proof that ancient texts secretly contained modern computers. We keep primary ideas, modern analogies, and speculative connections distinct.</p></div>
         <div className="source-grid">{REFERENCES.map((r,i) => <a className="source-card" key={r.url} href={r.url} target="_blank" rel="noopener noreferrer"><span>REFERENCE / 0{i+1}</span><strong>{r.name}</strong><p>{r.description}</p><span className="source-arrow">↗</span></a>)}</div>
-        <p className="evidence-footer">FUTURE RESEARCH · Comparative rule grammars · Historical metrical indexing · Formal provenance tags · Cross-engine experiments</p></section>
+        <p className="evidence-footer">LOCAL RECEIPTS · SHA-256 INTEGRITY · Computational outputs are demonstrations, not historical authentication · FUTURE RESEARCH · Comparative rule grammars · Historical metrical indexing · Formal provenance tags · Cross-engine experiments</p></section>
     </main>
     <footer><div><span className="logo-symbol">Φ</span><strong>PhiSkrit</strong><span>Independent implementation. Ledger above legend.</span></div><span>MIT LICENSE · © 2026 MichaelWave369</span></footer>
   </div>;
