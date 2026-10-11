@@ -90,3 +90,18 @@ footer{background:#101c27;border-top:1px solid #3d4c50;min-height:105px;display:
 @media(max-width:1000px){.engine-tab strong{font-size:24px}}
 @media(max-width:760px){.engine-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:450px){.bench-rule-step{display:grid}.histogram-column>small{font-size:8px}}
+
+/* PhiSkrit v0.4: portable rhythm exports */
+.bridge-panel{border-top:3px solid #b58a53}
+.bridge-panel h3{font:500 27px Fraunces,Georgia,serif;margin:6px 0}
+.bridge-panel .muted{max-width:710px}
+.bridge-export-buttons{display:flex;flex-wrap:wrap;gap:9px;margin:22px 0}
+.bridge-export-buttons>.action-button{flex:1;min-width:130px}
+.bridge-import{border-top:1px solid #d9ded7;padding-top:18px;display:grid;gap:9px}
+.bridge-import label{font-weight:700;font-size:12px}
+.bridge-import input[type=file]{width:100%;border:1px dashed #becac2;padding:13px;background:#f5f5ef;font-size:12px}
+.bridge-import input[type=file]::file-selector-button{margin-right:12px;padding:8px 12px;border:0;background:#283f4d;color:#fff;cursor:pointer}
+.bridge-import>span{font-size:11px;color:#7a8b88}
+.bridge-status{margin:18px 0 11px;font-size:12px;line-height:1.5;color:#506b69;overflow-wrap:anywhere}
+.bridge-link{display:inline-block;font-size:12px;font-weight:700;color:#73562e;text-decoration:underline;text-underline-offset:4px}
+.bridge-link:hover{color:#1e4754}
