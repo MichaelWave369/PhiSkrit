@@ -4,6 +4,9 @@ import { buildRhythmEvents } from './engines/rhythm.js';
 import { createExperimentReceipt } from './engines/receipts.js';
 import { runCrossEngineExperiment } from './engines/workbench.js';
 import { auditExperimentReceipt } from './engines/receipt-audit.js';
+import { createRhythmPacket, parseRhythmPacket, rhythmPacketSelection, MAX_PACKET_BYTES } from './engines/rhythm-packet.js';
+import { rhythmPacketToMidi } from './engines/midi.js';
+import { rhythmPacketToPng } from './engines/score-image.js';
 import { applyDemoSandhi, DEMO_RULES } from './engines/grammar.js';
 import { enumerateMeters, meterAt, meterCount, meterDuration } from './engines/prosody.js';
 import { ARYABHATA_PI, piErrorPercent, circumference, earthRotationDegrees } from './engines/astronomy.js';
@@ -26,6 +29,85 @@ function SectionHeading({ eyebrow, title, copy }) {
     <div className="eyebrow">{eyebrow}</div>
     <h2>{title}</h2>
     <p>{copy}</p>
+  </div>;
+}
+
+
+function savePortableFile(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(url), 1200);
+}
+
+function RhythmBridge({ pattern, bpm, onImport }) {
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState('Portable JSON · Standard MIDI file · Auralith-ready PNG image');
+  const packet = useMemo(() => createRhythmPacket({ pattern, bpm }), [pattern, bpm]);
+
+  async function exportAs(format) {
+    setBusy(true);
+    setMessage('');
+    try {
+      let blob, suffix;
+      if (format === 'json') {
+        blob = new Blob([JSON.stringify(packet, null, 2) + '\n'], { type: 'application/json' });
+        suffix = 'json';
+      } else if (format === 'midi') {
+        blob = new Blob([rhythmPacketToMidi(packet)], { type: 'audio/midi' });
+        suffix = 'mid';
+      } else if (format === 'png') {
+        blob = await rhythmPacketToPng(packet);
+        suffix = 'png';
+      } else throw new TypeError('Unknown export type');
+      savePortableFile(blob, 'phiskrit-rhythm-' + pattern.toLowerCase() + '-' + bpm + 'bpm.' + suffix);
+      setMessage(suffix.toUpperCase() + ' ready. Exported from the current ' + pattern + ' pattern.');
+    } catch (error) {
+      setMessage('Export failed: ' + (error?.message || 'Unknown error'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function importFile(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setBusy(true);
+    setMessage('Validating rhythm packet…');
+    try {
+      if (file.size > MAX_PACKET_BYTES) throw new RangeError('Packet must be smaller than 32 KiB.');
+      const candidate = JSON.parse(await file.text());
+      const imported = parseRhythmPacket(candidate);
+      onImport(rhythmPacketSelection(imported));
+      setMessage('Validated and loaded ' + imported.pattern + ' at ' + imported.bpm + ' BPM.');
+    } catch (error) {
+      setMessage('Import rejected: ' + (error?.message || 'Unknown error'));
+    } finally {
+      event.target.value = '';
+      setBusy(false);
+    }
+  }
+
+  return <div className="panel bridge-panel">
+    <div className="panel-top"><span>PORTABLE RHYTHM / INTEROP v1</span><span>OFFLINE & SELF-CONTAINED</span></div>
+    <h3>Send this pattern somewhere useful.</h3>
+    <p className="muted">JSON for independent applications, MIDI for music software, and a PNG score that Auralith can import as an image. These are modern renderings, not historical music transcripts.</p>
+    <div className="bridge-export-buttons">
+      <button type="button" className="action-button" disabled={busy} onClick={() => exportAs('json')}>↓ Pattern JSON</button>
+      <button type="button" className="action-button" disabled={busy} onClick={() => exportAs('midi')}>↓ Standard MIDI</button>
+      <button type="button" className="action-button" disabled={busy} onClick={() => exportAs('png')}>↓ Auralith PNG</button>
+    </div>
+    <div className="bridge-import">
+      <label htmlFor={'rhythm-import-' + pattern.length}>Import a PhiSkrit rhythm packet</label>
+      <input id={'rhythm-import-' + pattern.length} type="file" accept=".json,application/json" disabled={busy} onChange={importFile} />
+      <span>Only explicitly selected files are read; nothing is uploaded.</span>
+    </div>
+    <p className="bridge-status" role="status" aria-live="polite">{message}</p>
+    <a className="bridge-link" href="https://michaelwave369.github.io/Auralith369/" target="_blank" rel="noopener noreferrer">Open Auralith to import the PNG as artwork ↗</a>
   </div>;
 }
 
@@ -178,6 +260,7 @@ function WorkbenchLab() {
           </div>)}</div>
           <div className="distribution-key">OBSERVED / EXPECTED · Number of patterns by guru count</div>
         </div>
+        <RhythmBridge pattern={outputs.pattern} bpm={bpm} onImport={({length: n, index: i, bpm: tempo}) => { setLength(n); setIndex(i); setBpm(tempo); }} />
         <ReceiptButton engine="workbench" inputs={inputs} outputs={outputs} trace={trace} />
       </div>
       <aside className="lab-aside">
@@ -270,6 +353,7 @@ function ProsodyLab() {
         <div className="beat-track">{events.map(event => <div key={event.index} className={'beat-segment ' + (event.syllable === 'G' ? 'heavy' : 'light')} style={{ flexGrow: event.beats }}><span>{event.syllable}</span><small>{event.beats} {event.beats === 1 ? 'BEAT' : 'BEATS'}</small></div>)}</div>
         <p className="muted">Modern sonification: the 0/1 meter patterns determine timing, not a claim about instruments or music in Piṅgala's original treatise.</p>
       </div>
+      <RhythmBridge pattern={pattern} bpm={bpm} onImport={({length: n, index: i, bpm: tempo}) => { setLength(n); setIndex(i); setBpm(tempo); }} />
       <ReceiptButton engine="prosody" inputs={{ length, index: safeIndex, bpm, mapping: 'L=1 beat, G=2 beats' }} outputs={{ pattern, matras: meterDuration(pattern), events }} trace={events} />
       <div className="panel">
         <div className="panel-top"><span>PATTERN ATLAS</span><span>{all.length} TOTAL / {Math.min(all.length, 32)} SHOWN</span></div>
@@ -329,7 +413,7 @@ export default function App() {
   const [active, setActive] = useState('grammar');
   const current = SECTIONS.find(x => x.id === active);
   return <div className="app">
-    <header className="site-header"><a href="#top" className="logo"><span className="logo-symbol">Φ</span><span>Phi<span className="logo-accent">Skrit</span><small>THE SANSKRIT MACHINE</small></span></a><nav aria-label="Main navigation"><a href="#engines">Engines</a><a href="#evidence">Evidence</a><a href="https://github.com/MichaelWave369/PhiSkrit" target="_blank" rel="noopener noreferrer">GitHub ↗</a></nav><span className="version">V 0.3.0 · CROSS-ENGINE LAB</span></header>
+    <header className="site-header"><a href="#top" className="logo"><span className="logo-symbol">Φ</span><span>Phi<span className="logo-accent">Skrit</span><small>THE SANSKRIT MACHINE</small></span></a><nav aria-label="Main navigation"><a href="#engines">Engines</a><a href="#evidence">Evidence</a><a href="https://github.com/MichaelWave369/PhiSkrit" target="_blank" rel="noopener noreferrer">GitHub ↗</a></nav><span className="version">V 0.4.0 · RHYTHM INTEROP</span></header>
     <main id="top">
       <section className="hero">
         <div className="hero-content"><div className="eyebrow"><span className="status-dot"></span> AN OPEN LABORATORY FOR ANCIENT IDEAS</div><h1>Language is <em>logic.</em><br />Rhythm is <em>number.</em><br />The sky is <em>mathematics.</em></h1><p>Three remarkable intellectual traditions. Four runnable experiments. One place to ask how patterns become systems.</p><a className="primary-link" href="#engines">Explore the machines <span>↗</span></a></div>
@@ -343,7 +427,7 @@ export default function App() {
       </section>
       <section id="evidence" className="evidence-section"><div className="section-kicker"><span>EVIDENCE LEDGER</span><span>SOURCES · SCOPE · LIMITS</span></div><div className="evidence-intro"><div><div className="eyebrow">RESEARCH BEFORE MYTHOLOGY</div><h2>Every claim needs a source.<br /><em>Every model needs a boundary.</em></h2></div><p>PhiSkrit is an original educational implementation, not a Sanskrit translator, a full historical reconstruction, or proof that ancient texts secretly contained modern computers. We keep primary ideas, modern analogies, and speculative connections distinct.</p></div>
         <div className="source-grid">{REFERENCES.map((r,i) => <a className="source-card" key={r.url} href={r.url} target="_blank" rel="noopener noreferrer"><span>REFERENCE / 0{i+1}</span><strong>{r.name}</strong><p>{r.description}</p><span className="source-arrow">↗</span></a>)}</div>
-        <p className="evidence-footer">LOCAL RECEIPTS · SHA-256 INTEGRITY · VERIFIED REPLAY · Computational outputs are demonstrations, not historical authentication · FUTURE RESEARCH · Comparative rule grammars · Historical metrical indexing · Formal provenance tags · Cross-engine experiments</p></section>
+        <p className="evidence-footer">PORTABLE RHYTHM · MIDI · PNG · VERSIONED JSON · LOCAL RECEIPTS · SHA-256 INTEGRITY · VERIFIED REPLAY · Computational outputs are demonstrations, not historical authentication · FUTURE RESEARCH · Comparative rule grammars · Historical metrical indexing · Formal provenance tags · Cross-engine experiments</p></section>
     </main>
     <footer><div><span className="logo-symbol">Φ</span><strong>PhiSkrit</strong><span>Independent implementation. Ledger above legend.</span></div><span>MIT LICENSE · © 2026 MichaelWave369</span></footer>
   </div>;
