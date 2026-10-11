@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import ComposerLab from './components/ComposerLab.jsx';
 import { useRhythmPlayback } from './hooks/useRhythmPlayback.js';
 import { buildRhythmEvents } from './engines/rhythm.js';
 import { createExperimentReceipt } from './engines/receipts.js';
@@ -15,7 +16,8 @@ const SECTIONS = [
   { id: 'grammar', number: '01', name: 'Pāṇini', type: 'RULES', subtitle: 'Grammar as executable logic' },
   { id: 'prosody', number: '02', name: 'Piṅgala', type: 'PATTERNS', subtitle: 'Poetry as combinatorics' },
   { id: 'astronomy', number: '03', name: 'Āryabhaṭa', type: 'MATHEMATICS', subtitle: 'The cosmos as calculation' },
-  { id: 'workbench', number: '04', name: 'Workbench', type: 'SYNTHESIS', subtitle: 'Cross-engine experiments and receipt audits' }
+  { id: 'workbench', number: '04', name: 'Workbench', type: 'SYNTHESIS', subtitle: 'Cross-engine experiments and receipt audits' },
+  { id: 'composer', number: '05', name: 'Composer', type: 'MUSIC LAB', subtitle: 'Layer and arrange rhythmic patterns' }
 ];
 
 const REFERENCES = [
@@ -413,21 +415,21 @@ export default function App() {
   const [active, setActive] = useState('grammar');
   const current = SECTIONS.find(x => x.id === active);
   return <div className="app">
-    <header className="site-header"><a href="#top" className="logo"><span className="logo-symbol">Φ</span><span>Phi<span className="logo-accent">Skrit</span><small>THE SANSKRIT MACHINE</small></span></a><nav aria-label="Main navigation"><a href="#engines">Engines</a><a href="#evidence">Evidence</a><a href="https://github.com/MichaelWave369/PhiSkrit" target="_blank" rel="noopener noreferrer">GitHub ↗</a></nav><span className="version">V 0.4.0 · RHYTHM INTEROP</span></header>
+    <header className="site-header"><a href="#top" className="logo"><span className="logo-symbol">Φ</span><span>Phi<span className="logo-accent">Skrit</span><small>THE SANSKRIT MACHINE</small></span></a><nav aria-label="Main navigation"><a href="#engines">Engines</a><a href="#evidence">Evidence</a><a href="https://github.com/MichaelWave369/PhiSkrit" target="_blank" rel="noopener noreferrer">GitHub ↗</a></nav><span className="version">V 0.5.0 · RHYTHM COMPOSER</span></header>
     <main id="top">
       <section className="hero">
         <div className="hero-content"><div className="eyebrow"><span className="status-dot"></span> AN OPEN LABORATORY FOR ANCIENT IDEAS</div><h1>Language is <em>logic.</em><br />Rhythm is <em>number.</em><br />The sky is <em>mathematics.</em></h1><p>Three remarkable intellectual traditions. Four runnable experiments. One place to ask how patterns become systems.</p><a className="primary-link" href="#engines">Explore the machines <span>↗</span></a></div>
         <div className="hero-art" aria-hidden="true"><div className="art-ring ring-1"></div><div className="art-ring ring-2"></div><div className="art-ring ring-3"></div><div className="art-cross"></div><div className="art-symbol">सं</div><span className="orbit-label orbit-a">RULE</span><span className="orbit-label orbit-b">FORM</span><span className="orbit-label orbit-c">NUMBER</span></div>
         <div className="hero-index"><span>01 / RULES</span><span>02 / PATTERNS</span><span>03 / MATHEMATICS</span></div>
       </section>
-      <section id="engines" className="engines-section"><div className="section-kicker"><span>THE ENGINE ROOM</span><span>INTERACTIVE SYSTEMS / FOUR MODULES</span></div>
+      <section id="engines" className="engines-section"><div className="section-kicker"><span>THE ENGINE ROOM</span><span>INTERACTIVE SYSTEMS / FIVE MODULES</span></div>
         <div className="engine-tabs" role="group" aria-label="Select experiment">{SECTIONS.map(section => <button key={section.id} className={'engine-tab ' + (active === section.id ? 'active' : '')} onClick={() => setActive(section.id)} aria-pressed={active === section.id}><span className="tab-number">{section.number}</span><strong>{section.name}</strong><small>{section.type}</small><span className="tab-arrow">↗</span></button>)}</div>
         <div className="active-summary"><span>NOW EXPLORING</span><strong>{current.subtitle}</strong><span className="live-dot">● LIVE MODEL</span></div>
-        {active === 'grammar' ? <GrammarLab /> : active === 'prosody' ? <ProsodyLab /> : active === 'astronomy' ? <AstronomyLab /> : <WorkbenchLab />}
+        {active === 'grammar' ? <GrammarLab /> : active === 'prosody' ? <ProsodyLab /> : active === 'astronomy' ? <AstronomyLab /> : active === 'workbench' ? <WorkbenchLab /> : <ComposerLab />}
       </section>
       <section id="evidence" className="evidence-section"><div className="section-kicker"><span>EVIDENCE LEDGER</span><span>SOURCES · SCOPE · LIMITS</span></div><div className="evidence-intro"><div><div className="eyebrow">RESEARCH BEFORE MYTHOLOGY</div><h2>Every claim needs a source.<br /><em>Every model needs a boundary.</em></h2></div><p>PhiSkrit is an original educational implementation, not a Sanskrit translator, a full historical reconstruction, or proof that ancient texts secretly contained modern computers. We keep primary ideas, modern analogies, and speculative connections distinct.</p></div>
         <div className="source-grid">{REFERENCES.map((r,i) => <a className="source-card" key={r.url} href={r.url} target="_blank" rel="noopener noreferrer"><span>REFERENCE / 0{i+1}</span><strong>{r.name}</strong><p>{r.description}</p><span className="source-arrow">↗</span></a>)}</div>
-        <p className="evidence-footer">PORTABLE RHYTHM · MIDI · PNG · VERSIONED JSON · LOCAL RECEIPTS · SHA-256 INTEGRITY · VERIFIED REPLAY · Computational outputs are demonstrations, not historical authentication · FUTURE RESEARCH · Comparative rule grammars · Historical metrical indexing · Formal provenance tags · Cross-engine experiments</p></section>
+        <p className="evidence-footer">MULTI-CLIP COMPOSER · PORTABLE RHYTHM · MIDI · PNG · VERSIONED JSON · LOCAL RECEIPTS · SHA-256 INTEGRITY · VERIFIED REPLAY · Computational outputs are demonstrations, not historical authentication · FUTURE RESEARCH · Comparative rule grammars · Historical metrical indexing · Formal provenance tags · Cross-engine experiments</p></section>
     </main>
     <footer><div><span className="logo-symbol">Φ</span><strong>PhiSkrit</strong><span>Independent implementation. Ledger above legend.</span></div><span>MIT LICENSE · © 2026 MichaelWave369</span></footer>
   </div>;

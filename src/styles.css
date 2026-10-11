@@ -105,3 +105,41 @@ footer{background:#101c27;border-top:1px solid #3d4c50;min-height:105px;display:
 .bridge-status{margin:18px 0 11px;font-size:12px;line-height:1.5;color:#506b69;overflow-wrap:anywhere}
 .bridge-link{display:inline-block;font-size:12px;font-weight:700;color:#73562e;text-decoration:underline;text-underline-offset:4px}
 .bridge-link:hover{color:#1e4754}
+
+
+/* PhiSkrit v0.5 / multi-clip composer */
+.engine-tabs{grid-template-columns:repeat(5,minmax(0,1fr))}
+.composer-lab .section-heading{max-width:850px}
+.composer-field-row{display:grid;grid-template-columns:minmax(190px,1.2fr) minmax(220px,.9fr);gap:24px;align-items:end}
+.composer-title-field{display:grid;gap:10px;color:#52656d;font-size:12px;font-weight:700}
+.composer-title-field input{width:100%;padding:12px;border:1px solid #d4dacf;background:#f9f9f3;color:#263b45}
+.composer-title-field input:focus{border-color:#b17f48}
+.composer-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:24px}
+.composer-stats>div{border-top:1px solid #d6ddd3;padding-top:14px}
+.composer-stats span{display:block;font:9px 'DM Mono',monospace;letter-spacing:.7px;color:#788b8c}
+.composer-stats strong{display:block;margin-top:8px;color:#294753;font:20px 'DM Mono',monospace;overflow-wrap:anywhere}
+.composer-timeline{display:flex;align-items:stretch;gap:4px;overflow-x:auto;padding:9px 0 17px;min-height:95px;max-width:100%}
+.composer-timeline-event{flex:0 0 auto;min-height:74px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:#dcebe3;border:1px solid #c1d3c8;color:#2d6755;font:22px Fraunces,Georgia,serif}
+.composer-timeline-event.heavy{background:#f0dbba;border-color:#ddba86;color:#806137}
+.composer-timeline-event small{font:9px 'DM Mono',monospace;opacity:.8}
+.composer-controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:21px 0 5px}
+.composer-controls span{font-size:11px;color:#708486}
+.composer-clips{display:grid;gap:9px}
+.composer-clip{display:flex;align-items:center;flex-wrap:wrap;gap:12px;background:#f4f4ed;border-left:3px solid #c8a274;padding:12px}
+.composer-clip-index{color:#aa824c;font:10px 'DM Mono',monospace}
+.composer-clip>strong{font:18px 'DM Mono',monospace;color:#2b4c58;letter-spacing:1px;overflow-wrap:anywhere}
+.composer-clip>span:nth-of-type(2){font:11px 'DM Mono',monospace;color:#7e8a8b;flex:1}
+.composer-clip-buttons{display:flex;flex-wrap:wrap;gap:4px}
+.composer-clip-buttons button{min-width:31px;min-height:33px;background:#e9eee7;border:1px solid #cbd6cb;color:#243b48;font-size:16px}
+.composer-clip-buttons button:hover:not(:disabled){background:#d5dfd7}
+.composer-clip-buttons button:disabled{opacity:.35;cursor:not-allowed}
+.composer-pattern-bank{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:5px;margin:21px 0 8px}
+.composer-pattern-bank button{min-width:0;background:#f3f4ea;border:1px solid #d1d9ce;color:#40505a;padding:11px 4px;font:11px 'DM Mono',monospace;overflow-wrap:anywhere}
+.composer-pattern-bank button.selected,.composer-pattern-bank button:hover{color:#fff;background:#273f4e;border-color:#273f4e}
+.composer-export-panel{border-top:3px solid #c49a61}
+.composer-import-label{display:block;border-top:1px solid #d9ded5;margin:26px 0 12px;padding-top:18px;font-weight:700;font-size:12px}
+.composer-export-panel input[type=file]{display:block;width:100%;border:1px dashed #b8c8ba;padding:13px;background:#f4f4ee}
+.composer-status{color:#456c61;font-size:12px;line-height:1.6}
+@media(max-width:1200px){.engine-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:760px){.engine-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}.composer-field-row{grid-template-columns:1fr}.composer-pattern-bank{grid-template-columns:repeat(4,minmax(0,1fr))}}
+@media(max-width:450px){.composer-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.composer-clip-buttons{width:100%}}

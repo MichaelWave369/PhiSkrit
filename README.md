@@ -2,6 +2,18 @@
 
 **Three runnable educational experiments inspired by classical Indian intellectual traditions.**
 
+## v0.5.0: Multi-clip rhythm composer
+
+A fifth tab, **Composer**, now builds small original rhythmic sequences from the existing laghu/guru patterns:
+
+- Arrange up to 8 ordered pattern clips with 1–4 repeats each and a maximum of 128 note events.
+- Adjust tempo, reorder/remove clips, preview a scrollable timeline, and play the arrangement with browser-only synthesized audio.
+- Export `phiskrit.rhythm.composition.v1` JSON or standards-compliant Type 0 MIDI.
+- Re-import composition JSON only after independently reconstructing the clip/event timeline and rejecting altered or out-of-range metadata.
+- **More Bounce Labs boundary:** MBL's existing Agent Mix Studio accepts album-catalog *listening-set proposals*, not raw note sequences or MIDI. We intentionally do not manufacture a fake MBL mix.
+
+See [Composition v1 contract](docs/COMPOSITION_V1.md) for validation, data portability, timing and trust boundaries.
+
 ## v0.4.0: portable rhythm interoperability
 
 Both the Piṅgala and Workbench tabs now export:
