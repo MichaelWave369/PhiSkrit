@@ -2,6 +2,18 @@
 
 **Three runnable educational experiments inspired by classical Indian intellectual traditions.**
 
+## v0.4.0: portable rhythm interoperability
+
+Both the Piṅgala and Workbench tabs now export:
+
+- **Rhythm JSON** using `phiskrit.rhythm.packet.v1` for independent applications. Re-import to restore a selected pattern and BPM; imported timing and note data are strictly validated.
+- **Standard MIDI** (.mid, SMF type 0) with tempo, note on/off, 480 PPQ and end-of-track markers. Import into a MIDI-compatible music editor or workstation.
+- **Auralith-compatible PNG** (1280×720). Open the image manually in [Auralith369](https://michaelwave369.github.io/Auralith369/) using its existing image importer. Auralith is an **image-editing** application; PhiSkrit does not pretend it has a music sequencer, modify Auralith files or cross app trust boundaries.
+
+This is a standalone, modern sonification. It does **not** claim to reconstruct Sanskrit chanting or historical instrumentation. No user data is uploaded.
+
+For the transport schema, exact event timing and security limits, see [Rhythm Packet v1](docs/RHYTHM_PACKET_V1.md).
+
 ## v0.3.0: cross-engine workbench + receipt replay
 
 - **Cross-engine workbench:** a reproducible, bounded experiment combining enumerated L/G prosodic patterns, a consciously invented syllable-to-demo-rule mapping, synthesized timing, and arithmetic using Āryabhaṭa's recorded π approximation.
