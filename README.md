@@ -2,6 +2,16 @@
 
 **Three runnable educational experiments inspired by classical Indian intellectual traditions.**
 
+## v0.3.0: cross-engine workbench + receipt replay
+
+- **Cross-engine workbench:** a reproducible, bounded experiment combining enumerated L/G prosodic patterns, a consciously invented syllable-to-demo-rule mapping, synthesized timing, and arithmetic using Āryabhaṭa's recorded π approximation.
+- **Independent numerical control:** compare empirical guru-count histograms from complete enumeration to separately computed binomial coefficients; four clear pass/fail invariants.
+- **Local receipt audit:** import a PhiSkrit JSON receipt (up to 256 KiB), validate its existing SHA-256 digest, and recompute compatible v0.2/v0.3 engine outputs and traces. Digest validation alone is NOT authentication; replay checks agreement with *current code*, not historical truth.
+- **Non-breaking schema:** v0.2 receipts remain verifiable. The v1 receipt format also supports the new "workbench" engine.
+- **Pure-JavaScript engine:** no external datasets or new dependencies, no network request for audio or receipts.
+
+The cross-engine mapping is an original teaching analogy and should **not** be interpreted as any recovered ancient procedure, physical phenomenon, or established connection to NBG. A rigorous research hypothesis will need its own baseline and receipts.
+
 ## v0.2.0: play, inspect, export
 
 - **Rule debugger:** inspect the result of each demonstration rule evaluation with reset, previous, next, run-all, and direct step selection. The model is computed deterministically; UI inspection does not mutate the engine.
@@ -61,7 +71,7 @@ The architecture keeps pure logic in src/engines/ so later experimental integrat
 1. Verify a green React Pages deployment and mobile UI.
 2. Expand grammar experiments only alongside source citations and regression cases.
 3. Add historically faithful, independently validated Piṅgala enumeration as a distinct mode.
-4. Add receipt re-import and independent checks of semantic claims (v0.2 currently offers export and integrity verification API).
+4. Extend the receipt replayer with a documented migration policy for future engine revisions and optional comparison to saved baselines.
 5. Explore cross-engine rule/pattern analogies without equating them to historical fact.
 
 Copyright 2026 MichaelWave369. MIT license.

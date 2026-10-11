@@ -4,7 +4,8 @@ export const RECEIPT_SCHEMA = 'phiskrit.experiment.receipt.v1';
 const ENGINE_BOUNDARIES = Object.freeze({
   grammar: 'Modern demonstration of three Sanskrit vowel-combination cases; not the complete Astadhyayi.',
   prosody: 'Modern L/G indexing and synthesized rhythm; not a reconstruction of historical performance.',
-  astronomy: 'Reproducible arithmetic and simplified rotational visualization; not an astronomical ephemeris.'
+  astronomy: 'Reproducible arithmetic and simplified rotational visualization; not an astronomical ephemeris.',
+  workbench: 'Invented pattern-to-rule and duration-to-circle mappings; an educational comparison, not a historical or physical theory.'
 });
 
 export function createReceiptPayload({ engine, inputs, outputs, trace = [], createdAt } = {}) {
@@ -27,7 +28,7 @@ export function createReceiptPayload({ engine, inputs, outputs, trace = [], crea
   };
   return {
     schema: RECEIPT_SCHEMA,
-    generator: 'PhiSkrit v0.2.0',
+    generator: 'PhiSkrit v0.3.0',
     createdAt,
     engine,
     provenance: {

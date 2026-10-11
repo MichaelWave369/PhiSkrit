@@ -2,6 +2,8 @@ import React, { useMemo, useState } from 'react';
 import { useRhythmPlayback } from './hooks/useRhythmPlayback.js';
 import { buildRhythmEvents } from './engines/rhythm.js';
 import { createExperimentReceipt } from './engines/receipts.js';
+import { runCrossEngineExperiment } from './engines/workbench.js';
+import { auditExperimentReceipt } from './engines/receipt-audit.js';
 import { applyDemoSandhi, DEMO_RULES } from './engines/grammar.js';
 import { enumerateMeters, meterAt, meterCount, meterDuration } from './engines/prosody.js';
 import { ARYABHATA_PI, piErrorPercent, circumference, earthRotationDegrees } from './engines/astronomy.js';
@@ -9,7 +11,8 @@ import { ARYABHATA_PI, piErrorPercent, circumference, earthRotationDegrees } fro
 const SECTIONS = [
   { id: 'grammar', number: '01', name: 'Pāṇini', type: 'RULES', subtitle: 'Grammar as executable logic' },
   { id: 'prosody', number: '02', name: 'Piṅgala', type: 'PATTERNS', subtitle: 'Poetry as combinatorics' },
-  { id: 'astronomy', number: '03', name: 'Āryabhaṭa', type: 'MATHEMATICS', subtitle: 'The cosmos as calculation' }
+  { id: 'astronomy', number: '03', name: 'Āryabhaṭa', type: 'MATHEMATICS', subtitle: 'The cosmos as calculation' },
+  { id: 'workbench', number: '04', name: 'Workbench', type: 'SYNTHESIS', subtitle: 'Cross-engine experiments and receipt audits' }
 ];
 
 const REFERENCES = [
@@ -87,6 +90,110 @@ function RuleDebugger({ result, step, setStep }) {
         'The original engine calculated the result. This view replays its trace; it does not alter the rule order.'}</p>
     </div>
     <p className="muted">Interactive inspection of a deterministically computed trace, not a historical reconstruction of Pāṇini’s complete rule-ordering system.</p>
+  </div>;
+}
+
+function ReceiptInspector() {
+  const [result, setResult] = useState(null);
+  const [busy, setBusy] = useState(false);
+  async function inspect(event) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setResult(null);
+    setBusy(true);
+    try {
+      if (file.size > 262144) throw new Error('Maximum file size is 256 KiB.');
+      const data = JSON.parse(await file.text());
+      const outcome = await auditExperimentReceipt(data);
+      setResult({ ...outcome, name: file.name, engine: typeof data?.engine === 'string' ? data.engine : 'unknown',
+        digest: typeof data?.integrity?.digest === 'string' ? data.integrity.digest : '' });
+    } catch (error) {
+      setResult({ status: 'read-failed', explanation: 'Unable to inspect the JSON receipt: ' + (error?.message || 'Unknown error') });
+    } finally {
+      setBusy(false);
+      event.target.value = '';
+    }
+  }
+  return <div className="panel audit-panel">
+    <div className="panel-top"><span>RECEIPT INTEGRITY + DETERMINISTIC REPLAY</span><span>LOCAL FILE ONLY</span></div>
+    <p className="muted">Import a JSON receipt exported from any PhiSkrit v0.2 or v0.3 engine. We check its SHA-256 digest, then independently recalculate supported engine results. Your file stays in your browser.</p>
+    <label htmlFor="receipt-file" className="upload-label">Select PhiSkrit JSON receipt</label>
+    <input id="receipt-file" type="file" accept=".json,application/json" disabled={busy} onChange={inspect} />
+    <p className="muted">Maximum 256 KiB. A valid digest does not prove the source, authorship, historical accuracy, or that someone else did not recalculate the hash.</p>
+    {busy && <p role="status">Checking the receipt…</p>}
+    {result && <div className={'audit-result ' + result.status} role="status" aria-live="polite">
+      <span className="eyebrow">{result.status.replaceAll('-', ' ').toUpperCase()}</span>
+      <strong>{result.explanation}</strong>
+      {result.name && <p>File: {result.name} · Engine: {result.engine}</p>}
+      {result.digest && <code>SHA-256 (embedded): {result.digest}</code>}
+    </div>}
+  </div>;
+}
+
+function WorkbenchLab() {
+  const [length, setLength] = useState(5);
+  const [index, setIndex] = useState(10);
+  const [bpm, setBpm] = useState(96);
+  const result = useMemo(() => runCrossEngineExperiment({ length, index: Math.min(index, 2 ** length - 1), bpm }), [length, index, bpm]);
+  const { outputs, trace, inputs } = result;
+  const player = useRhythmPlayback(outputs.pattern, bpm);
+  return <div className="workbench-wrap">
+    <SectionHeading eyebrow="ENGINE 04 / REPRODUCIBLE SYNTHESIS" title="The cross-engine workbench" copy="One controlled pattern, three mathematical demonstrations. Generate L/G sequences, map them to existing demonstration rules, and independently check their combinatorial distribution. The mapping is a NEW educational invention, not a historical discovery." />
+    <div className="lab-layout">
+      <div className="lab-main">
+        <div className="panel">
+          <div className="panel-top"><span>EXPERIMENT INPUTS</span><span>{outputs.metrics.combinations} EXHAUSTIVE PATTERNS</span></div>
+          <div className="control-head"><label htmlFor="bench-length">Pattern positions</label><strong>{length}</strong></div>
+          <input id="bench-length" className="range" type="range" min="1" max="8" value={length}
+            onChange={e => { const n = Number(e.target.value); setLength(n); setIndex(i => Math.min(i, 2 ** n - 1)); }} />
+          <div className="control-head control-spaced"><label htmlFor="bench-index">Pattern index</label><strong>{inputs.index} / {2 ** length - 1}</strong></div>
+          <input id="bench-index" className="range" type="range" min="0" max={2 ** length - 1} value={inputs.index}
+            onChange={e => setIndex(Number(e.target.value))} />
+          <div className="control-head control-spaced"><label htmlFor="bench-bpm">Modern playback tempo</label><strong>{bpm} BPM</strong></div>
+          <input id="bench-bpm" className="range" type="range" min="60" max="180" step="2" value={bpm} onChange={e => setBpm(Number(e.target.value))} />
+          <div className="bench-pattern" aria-label={'Selected pattern ' + outputs.pattern}>
+            {[...outputs.pattern].map((letter, i) => <span key={i} className={'bench-syllable ' + (letter === 'G' ? 'heavy' : '')}>{letter}</span>)}
+          </div>
+          <div className="rhythm-playback">
+            <button className="action-button" type="button" onClick={player.playing ? player.stop : player.play}>{player.playing ? '■ Stop pattern' : '▶ Hear pattern'}</button>
+            <span role="status">{player.error || 'Synthesized in this browser, no prerecorded audio'}</span>
+          </div>
+          <div className="metrics"><div><span>GURU / HEAVY</span><strong>{outputs.metrics.guruCount}</strong></div><div><span>SYLLABLE UNITS</span><strong>{outputs.metrics.totalMatras}</strong></div><div><span>PLAY DURATION</span><strong>{outputs.metrics.durationSeconds.toFixed(2)}s</strong></div></div>
+        </div>
+        <div className="panel">
+          <div className="panel-top"><span>GRAMMAR RULE MAP</span><span>ILLUSTRATIVE / DETERMINISTIC</span></div>
+          <p className="muted">For this experiment, L maps to our DE​MO-01 vowel example and G maps to DEMO-02. This is a consciously invented translation between data representations.</p>
+          <div className="bench-rule-steps">{trace.map(entry => <div key={entry.position} className="bench-rule-step">
+            <span>{String(entry.position).padStart(2,'0')} · {entry.syllable}</span>
+            <strong>{entry.input.join(' + ')} → {entry.output}</strong>
+            <small>{entry.demoRule} · {entry.beats} {entry.beats === 1 ? 'beat' : 'beats'} · {entry.passes ? 'PASS' : 'FAIL'}</small>
+          </div>)}</div>
+        </div>
+        <div className="panel">
+          <div className="panel-top"><span>COMBINATORIAL BASELINE</span><span>{outputs.metrics.combinations} PATTERNS CHECKED</span></div>
+          <p className="muted">Counting patterns by heavy syllables produces the binomial coefficients C(n,k). The bars are measured enumeration counts; the expected counts are calculated separately.</p>
+          <div className="histogram">{outputs.distribution.map(row => <div key={row.guruCount} className="histogram-column">
+            <div className="histogram-bar-wrap"><div className="histogram-bar" style={{ height: Math.max(4, 100 * row.observed / Math.max(...outputs.distribution.map(item => item.observed))) + '%' }} title={row.observed + ' patterns'}></div></div>
+            <span>{row.guruCount}G</span><small>{row.observed} / {row.expected}</small>
+          </div>)}</div>
+          <div className="distribution-key">OBSERVED / EXPECTED · Number of patterns by guru count</div>
+        </div>
+        <ReceiptButton engine="workbench" inputs={inputs} outputs={outputs} trace={trace} />
+      </div>
+      <aside className="lab-aside">
+        <div className="aside-card"><div className="eyebrow">FOUR REPRODUCIBILITY CHECKS</div><h3>Independent baselines.</h3>
+          <div className="check-list">{Object.entries(outputs.checks).map(([name, passed]) => <div key={name}><span>{passed ? '✓' : '×'}</span><span>{name.replace(/([A-Z])/g,' $1')}</span><strong>{passed ? 'PASS' : 'FAIL'}</strong></div>)}</div>
+        </div>
+        <div className="aside-card aside-spaced"><div className="eyebrow">ĀRYABHAṬA ARITHMETIC</div><h3>Numbers in motion.</h3>
+          <p>Purely as a demonstration, treat the total syllable units ({outputs.metrics.totalMatras}) as a dimensionless circle diameter. Then apply 3.1416 and modern π.</p>
+          <div className="rule-card"><span>3.1416 × {outputs.metrics.totalMatras}</span><strong>{outputs.mathematicalDemo.approximateCircumference.toFixed(4)}</strong></div>
+          <div className="rule-card"><span>MODERN π RESULT</span><strong>{outputs.mathematicalDemo.modernCircumference.toFixed(4)}</strong></div>
+          <p className="muted">A deliberate numerical analogy, not a claim that poetic meter determines astronomical measurements.</p>
+        </div>
+      </aside>
+    </div>
+    <div className="audit-divider"><div className="eyebrow">LEDGER / REPLAY</div><h2>Can your evidence reproduce?</h2></div>
+    <ReceiptInspector />
   </div>;
 }
 
@@ -222,21 +329,21 @@ export default function App() {
   const [active, setActive] = useState('grammar');
   const current = SECTIONS.find(x => x.id === active);
   return <div className="app">
-    <header className="site-header"><a href="#top" className="logo"><span className="logo-symbol">Φ</span><span>Phi<span className="logo-accent">Skrit</span><small>THE SANSKRIT MACHINE</small></span></a><nav aria-label="Main navigation"><a href="#engines">Engines</a><a href="#evidence">Evidence</a><a href="https://github.com/MichaelWave369/PhiSkrit" target="_blank" rel="noopener noreferrer">GitHub ↗</a></nav><span className="version">V 0.2.0 · INTERACTIVE LAB</span></header>
+    <header className="site-header"><a href="#top" className="logo"><span className="logo-symbol">Φ</span><span>Phi<span className="logo-accent">Skrit</span><small>THE SANSKRIT MACHINE</small></span></a><nav aria-label="Main navigation"><a href="#engines">Engines</a><a href="#evidence">Evidence</a><a href="https://github.com/MichaelWave369/PhiSkrit" target="_blank" rel="noopener noreferrer">GitHub ↗</a></nav><span className="version">V 0.3.0 · CROSS-ENGINE LAB</span></header>
     <main id="top">
       <section className="hero">
-        <div className="hero-content"><div className="eyebrow"><span className="status-dot"></span> AN OPEN LABORATORY FOR ANCIENT IDEAS</div><h1>Language is <em>logic.</em><br />Rhythm is <em>number.</em><br />The sky is <em>mathematics.</em></h1><p>Three remarkable intellectual traditions. Three runnable experiments. One place to ask how patterns become systems.</p><a className="primary-link" href="#engines">Explore the machines <span>↗</span></a></div>
+        <div className="hero-content"><div className="eyebrow"><span className="status-dot"></span> AN OPEN LABORATORY FOR ANCIENT IDEAS</div><h1>Language is <em>logic.</em><br />Rhythm is <em>number.</em><br />The sky is <em>mathematics.</em></h1><p>Three remarkable intellectual traditions. Four runnable experiments. One place to ask how patterns become systems.</p><a className="primary-link" href="#engines">Explore the machines <span>↗</span></a></div>
         <div className="hero-art" aria-hidden="true"><div className="art-ring ring-1"></div><div className="art-ring ring-2"></div><div className="art-ring ring-3"></div><div className="art-cross"></div><div className="art-symbol">सं</div><span className="orbit-label orbit-a">RULE</span><span className="orbit-label orbit-b">FORM</span><span className="orbit-label orbit-c">NUMBER</span></div>
         <div className="hero-index"><span>01 / RULES</span><span>02 / PATTERNS</span><span>03 / MATHEMATICS</span></div>
       </section>
-      <section id="engines" className="engines-section"><div className="section-kicker"><span>THE ENGINE ROOM</span><span>INTERACTIVE SYSTEMS / THREE MODULES</span></div>
+      <section id="engines" className="engines-section"><div className="section-kicker"><span>THE ENGINE ROOM</span><span>INTERACTIVE SYSTEMS / FOUR MODULES</span></div>
         <div className="engine-tabs" role="group" aria-label="Select experiment">{SECTIONS.map(section => <button key={section.id} className={'engine-tab ' + (active === section.id ? 'active' : '')} onClick={() => setActive(section.id)} aria-pressed={active === section.id}><span className="tab-number">{section.number}</span><strong>{section.name}</strong><small>{section.type}</small><span className="tab-arrow">↗</span></button>)}</div>
         <div className="active-summary"><span>NOW EXPLORING</span><strong>{current.subtitle}</strong><span className="live-dot">● LIVE MODEL</span></div>
-        {active === 'grammar' ? <GrammarLab /> : active === 'prosody' ? <ProsodyLab /> : <AstronomyLab />}
+        {active === 'grammar' ? <GrammarLab /> : active === 'prosody' ? <ProsodyLab /> : active === 'astronomy' ? <AstronomyLab /> : <WorkbenchLab />}
       </section>
       <section id="evidence" className="evidence-section"><div className="section-kicker"><span>EVIDENCE LEDGER</span><span>SOURCES · SCOPE · LIMITS</span></div><div className="evidence-intro"><div><div className="eyebrow">RESEARCH BEFORE MYTHOLOGY</div><h2>Every claim needs a source.<br /><em>Every model needs a boundary.</em></h2></div><p>PhiSkrit is an original educational implementation, not a Sanskrit translator, a full historical reconstruction, or proof that ancient texts secretly contained modern computers. We keep primary ideas, modern analogies, and speculative connections distinct.</p></div>
         <div className="source-grid">{REFERENCES.map((r,i) => <a className="source-card" key={r.url} href={r.url} target="_blank" rel="noopener noreferrer"><span>REFERENCE / 0{i+1}</span><strong>{r.name}</strong><p>{r.description}</p><span className="source-arrow">↗</span></a>)}</div>
-        <p className="evidence-footer">LOCAL RECEIPTS · SHA-256 INTEGRITY · Computational outputs are demonstrations, not historical authentication · FUTURE RESEARCH · Comparative rule grammars · Historical metrical indexing · Formal provenance tags · Cross-engine experiments</p></section>
+        <p className="evidence-footer">LOCAL RECEIPTS · SHA-256 INTEGRITY · VERIFIED REPLAY · Computational outputs are demonstrations, not historical authentication · FUTURE RESEARCH · Comparative rule grammars · Historical metrical indexing · Formal provenance tags · Cross-engine experiments</p></section>
     </main>
     <footer><div><span className="logo-symbol">Φ</span><strong>PhiSkrit</strong><span>Independent implementation. Ledger above legend.</span></div><span>MIT LICENSE · © 2026 MichaelWave369</span></footer>
   </div>;
