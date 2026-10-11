@@ -192,6 +192,10 @@ export default function ComposerLab() {
           <input id="composer-import" type="file" accept=".json,application/json" disabled={busy} onChange={importFile}/>
           <p className="muted">Import limit 96 KiB. Timing, notes, clip counts, and all metadata are reconstructed and verified before loading. Import does not start audio.</p>
           <p role="status" className="composer-status">{message}</p>
+          <p className="muted">To review this arrangement elsewhere: export <strong>Composition JSON</strong>, then open More Bounce Labs → Desk → PhiSkrit Review. Import is always a separate, explicit action.</p>
+          <a className="bridge-link" href="https://michaelwave369.github.io/MoreBounceLabs/#/desk" target="_blank" rel="noopener noreferrer">
+            Open More Bounce Labs review workspace ↗
+          </a>
         </div>
       </div>
       <aside className="lab-aside">
@@ -203,10 +207,10 @@ export default function ComposerLab() {
           <div className="rule-card"><span>OUTPUT</span><strong>MIDI type 0 · 480 PPQ</strong></div>
         </div>
         <div className="aside-card aside-spaced">
-          <div className="eyebrow">MORE BOUNCE LABS / FUTURE RECEIVER</div>
+          <div className="eyebrow">MORE BOUNCE LABS / VERIFIED REVIEW RECEIVER</div>
           <h3>Two studios, one honest boundary.</h3>
-          <p>More Bounce Labs currently accepts <strong>catalog-based listening-set mixes</strong>, not arbitrary MIDI compositions. Save the composition here and use MIDI in compatible audio software. A future More Bounce receiver can support this format without changing its existing mix trust rules.</p>
-          <a href="https://michaelwave369.github.io/MoreBounceLabs/" target="_blank" rel="noopener noreferrer" className="bridge-link">Open More Bounce Labs ↗</a>
+          <p>More Bounce Labs now has a <strong>Desk → PhiSkrit Review</strong> workspace that validates and displays composition JSON without playback or queue changes. Its Agent Mix Studio remains separate and continues to require real catalog tracks.</p>
+          <a href="https://michaelwave369.github.io/MoreBounceLabs/#/desk" target="_blank" rel="noopener noreferrer" className="bridge-link">Open MBL Desk and select PhiSkrit Review ↗</a>
         </div>
       </aside>
     </div>
